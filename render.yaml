@@ -1,10 +1,11 @@
 # render.yaml
 services:
   - type: web
-    name: spring-backend
+    name: springboot-app
     env: java
-    buildCommand: ./gradlew build -x test
-    startCommand: java -jar build/libs/demo-0.0.1-SNAPSHOT.jar
+    plan: free
+    buildCommand: mvn clean package
+    startCommand: java -jar target/demo-0.0.1-SNAPSHOT.jar
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
