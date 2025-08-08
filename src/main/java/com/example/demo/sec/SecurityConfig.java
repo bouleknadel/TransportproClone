@@ -6,6 +6,7 @@ import com.example.demo.sec.filters.JwtAuthorisationFilter;
 import com.example.demo.sec.services.AccountService;
 import com.example.demo.sec.services.TwoFactorService;
 import com.example.demo.sec.services.AccountActivationService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,10 +24,17 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Value("${app.client.url:http://localhost:3000}")
+    private String clientUrl;
+
+    @Value("${app.client.urls:http://localhost:3000,http://192.168.32.1:3000,http://localhost:8080,http://192.168.32.1:8080}")
+    private String clientUrls;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager, 
@@ -78,7 +86,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://192.168.32.1:3000", "http://localhost:8080", "http://192.168.32.1:8080")); // Ajouter les origines
+        
+        // Diviser les URLs par virgule et les ajouter à la liste des origines autorisées
+        List<String> allowedOrigins = Arrays.asList(clientUrls.split(","));
+        configuration.setAllowedOrigins(allowedOrigins);
+        
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Méthodes autorisées
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With")); // En-têtes autorisés
         configuration.setAllowCredentials(true); // Si vous avez besoin de gérer les cookies
