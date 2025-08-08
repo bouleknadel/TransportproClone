@@ -3,6 +3,7 @@ package com.example.demo.sec.services;
 import com.example.demo.sec.entity.AppUser;
 import com.example.demo.services.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,9 @@ public class AccountActivationService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${app.server.url:http://localhost:8082}")
+    private String serverUrl;
 
     /**
      * Générer un token d'activation et envoyer l'email
@@ -36,8 +40,8 @@ public class AccountActivationService {
         
         accountService.updateUserObje(user);
         
-        // Construire le lien d'activation
-        String activationLink = "http://localhost:8082/activate-account?token=" + activationToken;
+        // Construire le lien d'activation avec l'URL configurée
+        String activationLink = serverUrl + "/activate-account?token=" + activationToken;
         
         // Envoyer l'email
         String subject = "Activation de votre compte TransportPro";
