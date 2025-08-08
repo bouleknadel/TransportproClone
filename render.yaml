@@ -1,8 +1,7 @@
-# render.yaml
 services:
   - type: web
     name: springboot-app
-    env: java
+    env: docker
     plan: free
     buildCommand: mvn clean package
     startCommand: java -jar target/demo-0.0.1-SNAPSHOT.jar
