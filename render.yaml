@@ -3,8 +3,3 @@ services:
     name: springboot-app
     env: docker
     plan: free
-    buildCommand: mvn clean package
-    startCommand: java -jar target/demo-0.0.1-SNAPSHOT.jar
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: prod
