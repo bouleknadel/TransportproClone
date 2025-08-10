@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -441,9 +442,16 @@ public class ReservationServiceImpl implements ReservationService {
         AppUser user = accountService.loadUserByUsername(principal.getName());
         List<Reservation> reservations;
         
+        // Debug: afficher les informations de l'utilisateur
+        System.out.println("=== DEBUG User Info ===");
+        System.out.println("Username: " + user.getUsername());
+        System.out.println("Roles: " + user.getRoles().stream().map(role -> role.getRolename()).collect(Collectors.joining(", ")));
+        
         // Détecter si l'utilisateur est un transporteur ou un chargeur
         boolean isTransporteur = user.getRoles().stream()
             .anyMatch(role -> "TRANSPORTEUR".equals(role.getRolename()));
+        
+        System.out.println("Est transporteur: " + isTransporteur);
         
         if (isTransporteur) {
             // Pour les transporteurs, récupérer les réservations où ils sont assignés
@@ -453,8 +461,25 @@ public class ReservationServiceImpl implements ReservationService {
             reservations = reservationRepository.findByChargeurOrderByDateReservationDesc(user);
         }
         
+        System.out.println("Nombre de réservations trouvées: " + reservations.size());
+        System.out.println("================================");
+        
         List<Map<String, Object>> recapitulatifs = new ArrayList<>();
         for (Reservation reservation : reservations) {
+            // Debug: afficher les informations de la réservation
+            System.out.println("=== DEBUG Reservation ===");
+            System.out.println("ID: " + reservation.getId());
+            System.out.println("Lieu départ: " + reservation.getLieuDepart());
+            System.out.println("Lieu arrivée: " + reservation.getLieuArrivee());
+            System.out.println("Camion: " + (reservation.getCamion() != null ? "OUI" : "NON"));
+            if (reservation.getCamion() != null) {
+                System.out.println("Transporteur: " + (reservation.getCamion().getTransporteur() != null ? "OUI" : "NON"));
+                if (reservation.getCamion().getTransporteur() != null) {
+                    System.out.println("Nom transporteur: " + reservation.getCamion().getTransporteur().getFirstName() + " " + reservation.getCamion().getTransporteur().getLastName());
+                }
+            }
+            System.out.println("=========================");
+            
             Map<String, Object> recapitulatif = new HashMap<>();
             recapitulatif.put("id", reservation.getId());
             recapitulatif.put("lieuDepart", reservation.getLieuDepart());
@@ -465,6 +490,7 @@ public class ReservationServiceImpl implements ReservationService {
             recapitulatif.put("poids", reservation.getPoids());
             recapitulatif.put("volume", reservation.getVolume());
             recapitulatif.put("tarif", reservation.getTarif());
+            recapitulatif.put("modePaiement", reservation.getModePaiement());
             
             if (isTransporteur) {
                 // Pour les transporteurs, ajouter les informations du chargeur
@@ -475,10 +501,37 @@ public class ReservationServiceImpl implements ReservationService {
                     chargeurInfo.put("lastName", reservation.getChargeur().getLastName());
                     chargeurInfo.put("email", reservation.getChargeur().getEmail());
                     chargeurInfo.put("phone", reservation.getChargeur().getPhone());
+                    chargeurInfo.put("companyName", reservation.getChargeur().getCompanyName());
                     recapitulatif.put("chargeur", chargeurInfo);
                     recapitulatif.put("chargeurNom", reservation.getChargeur().getFirstName() + " " + reservation.getChargeur().getLastName());
                     recapitulatif.put("chargeurId", reservation.getChargeur().getId());
+                    recapitulatif.put("chargeurCompany", reservation.getChargeur().getCompanyName());
+                    recapitulatif.put("chargeurPhone", reservation.getChargeur().getPhone());
+                    recapitulatif.put("chargeurEmail", reservation.getChargeur().getEmail());
+                } else {
+                    // Si pas de chargeur, mettre des valeurs par défaut
+                    recapitulatif.put("chargeurNom", "Chargeur non assigné");
+                    recapitulatif.put("chargeurCompany", "Non défini");
+                    recapitulatif.put("chargeurPhone", "Non défini");
+                    recapitulatif.put("chargeurEmail", "Non défini");
                 }
+                
+                // Ajouter les informations du camion du transporteur
+                if (reservation.getCamion() != null) {
+                    recapitulatif.put("marque", reservation.getCamion().getMarque());
+                    recapitulatif.put("modele", reservation.getCamion().getModele());
+                    recapitulatif.put("capacite", reservation.getCamion().getCapacite());
+                    recapitulatif.put("immatriculation", reservation.getCamion().getImmatriculation());
+                    recapitulatif.put("type", reservation.getCamion().getType());
+                } else {
+                    // Si pas de camion, mettre des valeurs par défaut
+                    recapitulatif.put("marque", "Marque non définie");
+                    recapitulatif.put("modele", "Modèle non défini");
+                    recapitulatif.put("capacite", 0.0);
+                    recapitulatif.put("immatriculation", "Non définie");
+                    recapitulatif.put("type", "Non défini");
+                }
+                
                 // Informations du trajet
                 recapitulatif.put("trajetInfo", reservation.getLieuDepart() + " → " + reservation.getLieuArrivee());
             } else {
@@ -488,8 +541,51 @@ public class ReservationServiceImpl implements ReservationService {
                     transporteurInfo.put("username", reservation.getCamion().getTransporteur().getUsername());
                     transporteurInfo.put("firstName", reservation.getCamion().getTransporteur().getFirstName());
                     transporteurInfo.put("lastName", reservation.getCamion().getTransporteur().getLastName());
+                    transporteurInfo.put("phone", reservation.getCamion().getTransporteur().getPhone());
+                    transporteurInfo.put("email", reservation.getCamion().getTransporteur().getEmail());
+                    transporteurInfo.put("companyName", reservation.getCamion().getTransporteur().getCompanyName());
                     recapitulatif.put("transporteur", transporteurInfo);
+                    
+                    // Construire le nom complet du transporteur
+                    String transporteurNom = "";
+                    if (reservation.getCamion().getTransporteur().getFirstName() != null && 
+                        reservation.getCamion().getTransporteur().getLastName() != null) {
+                        transporteurNom = reservation.getCamion().getTransporteur().getFirstName() + " " + 
+                                        reservation.getCamion().getTransporteur().getLastName();
+                    } else if (reservation.getCamion().getTransporteur().getUsername() != null) {
+                        transporteurNom = reservation.getCamion().getTransporteur().getUsername();
+                    } else {
+                        transporteurNom = "Transporteur non défini";
+                    }
+                    recapitulatif.put("transporteurNom", transporteurNom);
+                    
+                    // Ajouter les informations du camion
+                    if (reservation.getCamion().getMarque() != null && reservation.getCamion().getModele() != null) {
+                        recapitulatif.put("marque", reservation.getCamion().getMarque());
+                        recapitulatif.put("modele", reservation.getCamion().getModele());
+                        recapitulatif.put("capacite", reservation.getCamion().getCapacite());
+                        recapitulatif.put("immatriculation", reservation.getCamion().getImmatriculation());
+                        recapitulatif.put("type", reservation.getCamion().getType());
+                    } else {
+                        // Si les informations du camion ne sont pas complètes, mettre des valeurs par défaut
+                        recapitulatif.put("marque", "Marque non définie");
+                        recapitulatif.put("modele", "Modèle non défini");
+                        recapitulatif.put("capacite", 0.0);
+                        recapitulatif.put("immatriculation", "Non définie");
+                        recapitulatif.put("type", "Non défini");
+                    }
+                } else {
+                    // Si pas de transporteur assigné, mettre des valeurs par défaut
+                    recapitulatif.put("transporteurNom", "Transporteur non assigné");
+                    recapitulatif.put("marque", "Marque non définie");
+                    recapitulatif.put("modele", "Modèle non défini");
+                    recapitulatif.put("capacite", 0.0);
+                    recapitulatif.put("immatriculation", "Non définie");
+                    recapitulatif.put("type", "Non défini");
                 }
+                
+                // Ajouter les informations du trajet pour tous les chargeurs
+                recapitulatif.put("trajetInfo", reservation.getLieuDepart() + " → " + reservation.getLieuArrivee());
             }
             
             recapitulatifs.add(recapitulatif);

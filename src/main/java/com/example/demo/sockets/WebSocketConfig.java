@@ -24,10 +24,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(new SocketUpdatesHandler(), "/ws/users")
                 .setAllowedOrigins(clientUrl);
         registry.addHandler(socketCamionUpdatesHandler, "/ws/camions")
-                .setAllowedOrigins("*");
+                .setAllowedOrigins(clientUrl);
         registry.addHandler(chatWebSocketHandler, "/ws/chat")
-                .setAllowedOrigins("*");
+                .setAllowedOrigins(clientUrl);
         registry.addHandler(chatWebSocketHandler, "/ws/chat/{reservationId}")
-                .setAllowedOrigins("*");
+                .setAllowedOrigins(clientUrl);
     }
 }
