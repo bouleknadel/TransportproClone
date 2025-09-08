@@ -64,7 +64,7 @@ public class AccountServiceImpl implements AccountService {
         }
         
         AppUser savedUser = userAppRepository.save(user);
-        
+        savedUser.setActivated(true);
         // Envoyer l'email d'activation
         //accountActivationService.sendActivationEmail(savedUser);
         
